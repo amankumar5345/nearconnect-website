@@ -1,0 +1,66 @@
+# Replit Agent Prompt — Link All NearConnect Pages & Fix Buttons
+
+Copy everything below into the Replit Agent chat (in your `nearconnect-web` Repl).
+
+---
+
+I'm building a multi-page static frontend called **NearConnect** (HTML/CSS/JS with Vite, Express+SQLite backend in `/backend`). The site lets users create a profile (with attributes + location), log in, and then discover/create/join local events (morning walk, gym, BGMI tournament, trips, etc.) hosted by nearby users.
+
+**The problem:** I generated many individual pages for different parts of the flow, but they are not connected to each other. Buttons and links either go nowhere, point to the wrong page, or are missing an `href`/click handler entirely. I need you to make the *entire* site clickable end-to-end.
+
+### Pages currently in the repo (root directory, unless noted)
+
+- `index.html` — landing page
+- `login.html` — login page
+- `nearconnect-onboarding-flow.html` — profile creation / onboarding (attributes + location)
+- `nearconnect-home-feed.html` — main feed after login
+- `nearconnect-map-discovery.html` — map-based event/area discovery
+- `nearconnect-activity-hub.html` — activity hub
+- `nearconnect-games-hub-tournament-brackets.html` — games/tournament brackets hub
+- `nearconnect-trips-picnics.html` — trips & picnics
+- `nearconnect-notice-board.html` — notice board
+- `nearconnect-community-help-sos.html` — community help / SOS
+- `nearconnect-chat-interface.html` — chat
+- `nearconnect-user-profile.html` — user profile view/edit
+- `nearconnect-settings-privacy.html` — settings & privacy
+- `event-registration-step-1.html`, `event-registration-step-2.html`, `event-registration-confirmation.html` — "join event" flow
+- `host-tournament-basic-details.html`, `host-tournament-format-rules.html`, `host-tournament-format-rules-with-entry-fee.html`, `host-tournament-schedule-launch.html` — "host/create event" flow
+- Helper scripts already in the repo that may be **partial/previous attempts** at this exact task: `add_nav.js`, `fix-nav.js`, `inject-sidebar.js`, `link-pages.js`, `download.js`
+- `src/main.js`, `src/auth.js`, `src/sidebar.js`, `src/style.css`
+
+### What I need you to do
+
+1. **Audit first.** Before writing new code, open every `.html` file in the repo and every `.js` helper file listed above. Build a map of:
+   - Every `<button>`, `<a>`, and clickable `<div>`/card in each page.
+   - What that element's label/icon/context implies it should do (e.g., a "Create Event" button on the home feed should go to `host-tournament-basic-details.html` or a generic event-creation page; a "Join" button on an event card should go to `event-registration-step-1.html`).
+   - Whether it currently has a working `href`, an `onclick`, neither, or a broken/placeholder one (`href="#"`, empty `onclick`, etc).
+   - Check whether `add_nav.js`, `fix-nav.js`, `inject-sidebar.js`, and `link-pages.js` already do part of this job — reconcile/consolidate them into ONE clear navigation solution instead of leaving four overlapping, possibly conflicting scripts. Remove or merge the redundant ones.
+
+2. **Define and implement a single source of truth for navigation.** Create one shared nav/sidebar (or reuse `src/sidebar.js` if it already does this) that is injected consistently on every internal page (home feed, activity hub, map discovery, notice board, community help/SOS, games hub, trips, chat, profile, settings) so users can always get from any main page to any other main page — not just forward through a linear flow.
+
+3. **Wire up the full user journey**, in this logical order, making sure every button along the way is a real, working link:
+   - `index.html` → **Sign up / Log in** → `login.html`
+   - `login.html` → successful login → `nearconnect-onboarding-flow.html` (first-time users, profile + location setup) → `nearconnect-home-feed.html`
+   - `nearconnect-home-feed.html` → nav links to every hub page listed above, PLUS the two core actions:
+     - **"Create Event"** → into the `host-tournament-*.html` flow, in order: `host-tournament-basic-details.html` → `host-tournament-format-rules.html` (or `-with-entry-fee.html` if the user opts to charge a fee — wire the branch) → `host-tournament-schedule-launch.html` → back to home feed / confirmation.
+     - **"Join Event"** (from an event card, wherever event cards appear — home feed, map discovery, activity hub, games hub, trips) → `event-registration-step-1.html` → `event-registration-step-2.html` → `event-registration-confirmation.html` → back to home feed.
+   - Every hub page (`activity hub`, `map discovery`, `notice board`, `community help/SOS`, `games hub`, `trips`, `chat`, `profile`, `settings`) needs working "back to home", nav-to-other-hubs, and any action buttons on that page (e.g. "message host" → chat interface with that host pre-selected if feasible, "edit profile" → `nearconnect-user-profile.html`, etc).
+
+4. **Fill gaps by generating pages, not by leaving dead links.** If a button clearly implies a destination that doesn't exist yet (e.g. a specific event-type detail page, a "view all my events" page, a generic event-creation-type-picker before branching into tournament vs. morning-walk vs. gym event, or a 404/empty state), create a minimal but visually consistent page for it using the same header/nav/footer and `src/style.css` styling as the rest of the site, rather than leaving the button broken.
+
+5. **Consistency pass.** Make sure:
+   - Every page includes the shared nav/sidebar.
+   - Every button has either a proper `href="page.html"` or a JS handler that does `window.location.href = "page.html"` (or SPA-style routing if you convert it — see note below).
+   - No `href="#"` or empty `onclick=""` remain anywhere in the repo.
+   - Relative paths are correct given the Vite build setup (check `vite.config.js` for base path config).
+
+6. **Test end-to-end.** After wiring everything, simulate clicking through the site starting from `index.html` and confirm: every button reaches a real page, every page can navigate back out, and there are no dead ends or console errors. List out any button/page you were not able to confidently connect (ambiguous intent) so I can clarify.
+
+### Notes / constraints
+
+- Keep it as a static multi-page Vite site (don't convert to a JS framework/SPA unless you think it's genuinely necessary to solve the linking problem — if so, ask me first and explain why).
+- Preserve existing visual design (`src/style.css`) — don't restyle pages, only fix navigation/linking.
+- If login/auth state is needed to gate pages (e.g. redirect to `login.html` if not logged in), use `src/auth.js` if it already has logic for this; otherwise implement a simple session check (localStorage or backend session) consistent with what `backend/server.js` supports.
+- Give me a short summary at the end listing: (a) which pages/buttons you connected, (b) any new pages you created and why, (c) any button whose destination was ambiguous and what you assumed.
+
+---

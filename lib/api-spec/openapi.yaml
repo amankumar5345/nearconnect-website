@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NearConnect API - local events discovery and community platform
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User profile operations
+  - name: events
+    description: Event CRUD and discovery
+  - name: registrations
+    description: Event registration operations
+  - name: chat
+    description: Chat messaging
+  - name: notices
+    description: Notice board
+  - name: sos
+    description: Community help / SOS
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +37,947 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in with phone/email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResult"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResult"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user's public profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List events with optional filters
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [morning_walk, gym, tournament, trip, picnic, social, sos, other]
+        - name: lat
+          in: query
+          schema:
+            type: number
+        - name: lng
+          in: query
+          schema:
+            type: number
+        - name: radius
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create a new event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+  /events/feed:
+    get:
+      operationId: getFeed
+      tags: [events]
+      summary: Home feed - personalized events for current user
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Feed events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+
+  /events/stats:
+    get:
+      operationId: getEventStats
+      tags: [events]
+      summary: Summary stats for the dashboard
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventStats"
+
+  /events/{eventId}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get a single event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateEvent
+      tags: [events]
+      summary: Update an event (host only)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventUpdate"
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Delete an event (host only)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /events/{eventId}/registrations:
+    get:
+      operationId: getEventRegistrations
+      tags: [registrations]
+      summary: List registrations for an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of registrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Registration"
+    post:
+      operationId: registerForEvent
+      tags: [registrations]
+      summary: Register for an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationInput"
+      responses:
+        "201":
+          description: Registration confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registration"
+        "400":
+          description: Already registered or full
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/{eventId}/registrations/me:
+    delete:
+      operationId: cancelRegistration
+      tags: [registrations]
+      summary: Cancel my registration for an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /my/registrations:
+    get:
+      operationId: getMyRegistrations
+      tags: [registrations]
+      summary: Get all events I'm registered for
+      responses:
+        "200":
+          description: My registrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Registration"
+
+  /my/events:
+    get:
+      operationId: getMyEvents
+      tags: [events]
+      summary: Get all events I'm hosting
+      responses:
+        "200":
+          description: My hosted events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+
+  /chat/rooms:
+    get:
+      operationId: listChatRooms
+      tags: [chat]
+      summary: List chat rooms (DMs + event rooms) for current user
+      responses:
+        "200":
+          description: List of chat rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatRoom"
+
+  /chat/rooms/{roomId}/messages:
+    get:
+      operationId: getChatMessages
+      tags: [chat]
+      summary: Get messages in a chat room
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
+    post:
+      operationId: sendMessage
+      tags: [chat]
+      summary: Send a message in a room
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessageInput"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+
+  /notices:
+    get:
+      operationId: listNotices
+      tags: [notices]
+      summary: List community notices
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [general, lost_found, help_wanted, announcement, urgent]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Notices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notice"
+    post:
+      operationId: createNotice
+      tags: [notices]
+      summary: Post a new community notice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoticeInput"
+      responses:
+        "201":
+          description: Notice created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notice"
+
+  /sos:
+    get:
+      operationId: listSosRequests
+      tags: [sos]
+      summary: List active SOS / help requests
+      responses:
+        "200":
+          description: SOS requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SosRequest"
+    post:
+      operationId: createSosRequest
+      tags: [sos]
+      summary: Create an SOS / community help request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SosRequestInput"
+      responses:
+        "201":
+          description: SOS request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SosRequest"
+
+  /sos/{sosId}/respond:
+    post:
+      operationId: respondToSos
+      tags: [sos]
+      summary: Respond / offer help to an SOS request
+      parameters:
+        - name: sosId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SosResponseInput"
+      responses:
+        "201":
+          description: Response recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: ["string", "null"]
+
+    LoginInput:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier:
+          type: string
+          description: Email or phone number
+        password:
+          type: string
+
+    RegisterInput:
+      type: object
+      required: [name, identifier, password]
+      properties:
+        name:
+          type: string
+        identifier:
+          type: string
+          description: Email or phone number
+        password:
+          type: string
+
+    AuthResult:
+      type: object
+      required: [user, isNewUser]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        isNewUser:
+          type: boolean
+
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        avatar:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        attributes:
+          type: array
+          items:
+            type: string
+        eventsHosted:
+          type: integer
+        eventsJoined:
+          type: integer
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        avatar:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        attributes:
+          type: array
+          items:
+            type: string
+
+    Event:
+      type: object
+      required: [id, title, type, hostId, status, startAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        type:
+          type: string
+          enum: [morning_walk, gym, tournament, trip, picnic, social, sos, other]
+        hostId:
+          type: integer
+        host:
+          $ref: "#/components/schemas/User"
+        location:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        startAt:
+          type: string
+        endAt:
+          type: ["string", "null"]
+        maxParticipants:
+          type: ["integer", "null"]
+        currentParticipants:
+          type: integer
+        entryFee:
+          type: ["number", "null"]
+        status:
+          type: string
+          enum: [upcoming, ongoing, completed, cancelled]
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: ["string", "null"]
+        isTournament:
+          type: boolean
+        prize:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    EventInput:
+      type: object
+      required: [title, type, startAt]
+      properties:
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        type:
+          type: string
+          enum: [morning_walk, gym, tournament, trip, picnic, social, sos, other]
+        location:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        startAt:
+          type: string
+        endAt:
+          type: ["string", "null"]
+        maxParticipants:
+          type: ["integer", "null"]
+        entryFee:
+          type: ["number", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: ["string", "null"]
+        isTournament:
+          type: boolean
+        prize:
+          type: ["string", "null"]
+
+    EventUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        startAt:
+          type: string
+        endAt:
+          type: ["string", "null"]
+        maxParticipants:
+          type: ["integer", "null"]
+        entryFee:
+          type: ["number", "null"]
+        status:
+          type: string
+          enum: [upcoming, ongoing, completed, cancelled]
+        imageUrl:
+          type: ["string", "null"]
+        prize:
+          type: ["string", "null"]
+
+    EventStats:
+      type: object
+      required: [totalEvents, upcomingEvents, totalUsers, activeToday]
+      properties:
+        totalEvents:
+          type: integer
+        upcomingEvents:
+          type: integer
+        totalUsers:
+          type: integer
+        activeToday:
+          type: integer
+        byType:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventTypeCount"
+
+    EventTypeCount:
+      type: object
+      required: [type, count]
+      properties:
+        type:
+          type: string
+        count:
+          type: integer
+
+    Registration:
+      type: object
+      required: [id, eventId, userId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        eventId:
+          type: integer
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        event:
+          $ref: "#/components/schemas/Event"
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled]
+        teamName:
+          type: ["string", "null"]
+        teamSize:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    RegistrationInput:
+      type: object
+      properties:
+        teamName:
+          type: ["string", "null"]
+        teamSize:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+
+    ChatRoom:
+      type: object
+      required: [id, name, type, lastMessageAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [event, direct, group]
+        eventId:
+          type: ["integer", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        lastMessage:
+          type: ["string", "null"]
+        lastMessageAt:
+          type: string
+        unreadCount:
+          type: integer
+        participantCount:
+          type: integer
+
+    ChatMessage:
+      type: object
+      required: [id, roomId, userId, text, createdAt]
+      properties:
+        id:
+          type: integer
+        roomId:
+          type: integer
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        text:
+          type: string
+        createdAt:
+          type: string
+
+    ChatMessageInput:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    Notice:
+      type: object
+      required: [id, title, content, authorId, category, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        authorId:
+          type: integer
+        author:
+          $ref: "#/components/schemas/User"
+        category:
+          type: string
+          enum: [general, lost_found, help_wanted, announcement, urgent]
+        imageUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    NoticeInput:
+      type: object
+      required: [title, content, category]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          type: string
+          enum: [general, lost_found, help_wanted, announcement, urgent]
+        imageUrl:
+          type: ["string", "null"]
+
+    SosRequest:
+      type: object
+      required: [id, title, description, requesterId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        requesterId:
+          type: integer
+        requester:
+          $ref: "#/components/schemas/User"
+        location:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [open, resolved, cancelled]
+        responseCount:
+          type: integer
+        createdAt:
+          type: string
+
+    SosRequestInput:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        location:
+          type: ["string", "null"]
+
+    SosResponseInput:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
