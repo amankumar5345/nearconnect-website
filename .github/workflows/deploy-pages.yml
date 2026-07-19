@@ -6,12 +6,17 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,20 +38,24 @@ jobs:
       - name: Build frontend
         run: pnpm --filter @workspace/nearconnect-web build
         env:
-          # GitHub Pages serves from /nearconnect-website/ — must match your repo name exactly
           BASE_PATH: /nearconnect-website/
-          # Point the frontend at your deployed backend (set this in repo Settings → Secrets)
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: SPA fallback — copy index.html → 404.html
         run: cp artifacts/nearconnect-web/dist/public/index.html artifacts/nearconnect-web/dist/public/404.html
 
-      - name: Add .nojekyll
-        run: touch artifacts/nearconnect-web/dist/public/.nojekyll
-
-      - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: artifacts/nearconnect-web/dist/public
-          publish_branch: gh-pages
+          path: artifacts/nearconnect-web/dist/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
