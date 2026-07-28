@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, sessionsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq } from "d@workspace/db";
 import { randomBytes, createHash } from "crypto";
 
 const router = Router();
