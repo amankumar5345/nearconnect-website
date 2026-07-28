@@ -1,13 +1,13 @@
 import { Router } from "express";
-import healthRouter from "./health";
-import authRouter from "./auth";
-import usersRouter from "./users";
-import eventsRouter from "./events";
-import registrationsRouter from "./registrations";
-import chatRouter from "./chat";
-import noticesRouter from "./notices";
-import sosRouter from "./sos";
-import myRouter from "./my";
+import healthRouter from "./health.js";
+import authRouter from "./auth.js";
+import usersRouter from "./users.js";
+import eventsRouter from "./events.js";
+import registrationsRouter from "./registrations.js";
+import chatRouter from "./chat.js";
+import noticesRouter from "./notices.js";
+import sosRouter from "./sos.js";
+import myRouter from "./my.js";
 
 const router = Router();
 

@@ -2,8 +2,8 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { registrationsTable, eventsTable, usersTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
-import { requireAuth, formatUser, AuthRequest } from "./middleware";
-import { formatEvent } from "./events";
+import { requireAuth, formatUser, AuthRequest } from "./middleware.js";
+import { formatEvent } from "./events.js";
 
 const router = Router({ mergeParams: true });
 
