@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @workspace/nearconnect-web run build",
+  "buildCommand": "pnpm run typecheck:libs && pnpm --filter @workspace/nearconnect-web run build",
   "outputDirectory": "artifacts/nearconnect-web/dist/public",
   "functions": {
     "api/index.ts": {
