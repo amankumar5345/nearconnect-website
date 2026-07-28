@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_RIQFuwnC861UdU6QyVPr9eNC3Yb6",
+      "name": "nearconnect-website-api-server",
+      "directory": ".",
+      "orgId": "team_hkot1rjQ7qU9XEXSBdkehLG9"
+    }
+  ]
+}
