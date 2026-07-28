@@ -1,0 +1,19 @@
+{
+  "buildCommand": "pnpm --filter @workspace/nearconnect-web run build",
+  "outputDirectory": "artifacts/nearconnect-web/dist/public",
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
